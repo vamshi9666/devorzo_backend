@@ -13,9 +13,10 @@ import logger, { Level } from './lib/logger';
 import initDatabase from './schema/database/mongoose';
 import { TypegooseMiddleware } from './lib/typegooseMiddleware';
 import UserResolver from './schema/resolvers/userResolver';
-import ArticleResolver from './schema/resolvers/articleResolver';
+import { ArticleResolver, BookmarkResolver, HistoryResolver } from './schema/resolvers/articleResolver';
 import CommunityResolver from './schema/resolvers/communityResolver';
-import UserModel, { User } from './schema/entities/user';
+import { FollowResolver, FollowerResolver } from './schema/resolvers/followerResolver';
+import UserModel from './schema/entities/user';
 import parseToken from './lib/parseToken';
 
 // import session from "express-session"
@@ -47,7 +48,15 @@ const corsOptionsDelegate = (req: any, callback: any) => {
 app.set('port', (process.env.PORT || 5000));
 
 const schema = buildSchema({
-  resolvers: [UserResolver, ArticleResolver, CommunityResolver],
+  resolvers: [
+    UserResolver,
+    FollowResolver,
+    FollowerResolver,
+    ArticleResolver,
+    BookmarkResolver,
+    HistoryResolver,
+    CommunityResolver,
+  ],
   emitSchemaFile: path.resolve(__dirname, 'schema.gql'),
   // use document converting middleware
   globalMiddlewares: [TypegooseMiddleware],
@@ -60,10 +69,17 @@ const server = new ApolloServer({
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
   schema,
-  context: ({ req }) => {
+  context: async ({ req }) => {
     const token = req.headers.authorization || '';
-    const id = parseToken(token);
-    const user = UserModel.findOne({ id });
+    const payload: {
+      userId: string,
+      token: string,
+      access: string
+    } = parseToken(token);
+    const user = await UserModel.findOne({
+      userId: payload?.userId,
+      'tokens.token': payload?.token,
+    });
     return { user };
   },
 });
@@ -97,5 +113,5 @@ app.use(bodyParser.json({
 app.listen(app.get('port'), process.env.IP!, () => {
   logger(`Server started at ${app.get('port')}`, Level.INFO);
   logger(`env: ${process.env.NODE_ENV}`);
-  // logger(`Graphql path: ${server.graphqlPath}`);
+  logger(`Graphql path: ${server.graphqlPath}`);
 });

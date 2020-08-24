@@ -7,6 +7,7 @@ type Article {
   articleBanner: String!
   articleId: String!
   articleType: Float!
+  author: User
   authorId: String!
   belongsToCommunity: Float!
   comments: [Comments!]!
@@ -15,6 +16,7 @@ type Article {
   createdOn: Float!
   durationOfArticle: Float!
   edited: Float!
+  isArticleLiked: Boolean
   lastEditedOn: Float
   likes: [Likes!]!
   moderationStatus: Float!
@@ -24,9 +26,20 @@ type Article {
   views: Float!
 }
 
+input ArticleInput {
+  articleType: String
+  authorId: String
+}
+
 type Bookmarks {
+  article: Article!
   articleId: String!
   bookmarkedOn: Float!
+}
+
+input CheckUserIfUniqueInput {
+  email: String
+  username: String
 }
 
 type Comments {
@@ -47,7 +60,45 @@ type Community {
   rules: String!
 }
 
+input CreateNewUserInput {
+  email: String!
+  fullname: String!
+  gender: Float
+  password: String!
+  userBio: String
+  username: String!
+}
+
+input FindArticleInput {
+  articleId: String!
+}
+
+input FindUserInput {
+  email: String
+  userId: String
+  username: String
+}
+
+type Follow {
+  followers: [Followers!]
+  user: User
+  userId: String!
+}
+
+type Followers {
+  followedOn: Float!
+  follower: User
+  followerId: String!
+}
+
+input FollowUserInput {
+  email: String
+  userId: String!
+  username: String
+}
+
 type History {
+  article: Article!
   articleId: String!
   visitedOn: Float!
 }
@@ -57,19 +108,52 @@ type Likes {
   userId: String!
 }
 
+input LogUserInput {
+  email: String!
+  password: String!
+}
+
 type Mutation {
   addTestArticle: Article!
   addTestCommunity: Community!
-  addTestUser: User!
+  addToBookmarks(where: FindArticleInput!): Boolean
+  addToHistory(where: FindArticleInput!): Boolean
+  clearAllBookmarks: Boolean
+  clearAllHistory: Boolean
+  createNewUser(data: CreateNewUserInput!): User
+  deleteUser(where: FindUserInput!): Boolean
+  followUser(where: FollowUserInput!): Boolean
+  loginExistingUser(where: LogUserInput!): User
+  removeArticleFromBookmarks(where: FindArticleInput!): Boolean
+  removeArticleFromHistory(where: FindArticleInput!): Boolean
+  unfollowUser(where: FollowUserInput!): Boolean
+  updateUser(data: UpdateUserInput!, where: FindUserInput!): User
 }
 
 type Query {
-  articles: [Article!]!
+  article(where: FindArticleInput!): Article
+  articles(limit: Float, skip: Float, where: ArticleInput): [Article!]
   communities: [Community!]!
-  helloFromArticle: String!
+  followers(where: FollowUserInput!): Follow
+  following(where: FollowUserInput!): [Follow!]!
   helloFromCommunity: String!
-  helloFromUser: String!
+  isUserUnique(where: CheckUserIfUniqueInput!): Boolean!
+  user(where: FindUserInput!): User
   users: [User!]!
+}
+
+type SocialLinks {
+  github: String
+  link: String
+  linkedin: String
+  twitter: String
+}
+
+input SocialLinksInput {
+  github: String
+  link: String
+  linkedin: String
+  twitter: String
 }
 
 type Tags {
@@ -77,24 +161,29 @@ type Tags {
   tag: String!
 }
 
-type Token {
-  access: String!
-  token: String!
+input UpdateUserInput {
+  email: String
+  fullname: String
+  gender: Float
+  profileImage: String
+  socialLinks: SocialLinksInput
+  userBio: String
+  username: String
 }
 
 type User {
   accountCreatedOn: Float!
-  accountInitialised: Float!
-  accountType: Float!
-  bookmarks: [Bookmarks!]!
+  accountInitialised: Int
+  accountType: Int
+  authToken: String
+  bookmarks: [Bookmarks!]
   email: String!
-  emailVerified: Float!
+  emailVerified: Int
   fullname: String!
-  gender: Float!
-  history: [History!]!
-  password: String!
+  gender: Int!
+  history: [History!]
   profileImage: String!
-  tokens: [Token!]!
+  socialLinks: SocialLinks
   userBio: String!
   userId: String!
   username: String!
